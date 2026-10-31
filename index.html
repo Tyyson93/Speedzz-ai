@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#10131b">
+<meta name="description" content="SPEEDZZ AI trading scanner and assistant prototype">
+<link rel="manifest" href="manifest.json">
+<title>SPEEDZZ AI</title>
+<style>
+:root{color-scheme:dark;--bg:#0d1017;--panel:#151a24;--line:#252d3b;--muted:#9aa6b8;--text:#f4f7fb;--blue:#7c9cff;--green:#37d69a;--red:#ff7185}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,sans-serif}
+header{position:sticky;top:0;background:#10131bf2;border-bottom:1px solid var(--line);padding:14px 16px;z-index:2;display:flex;align-items:center;justify-content:space-between}
+.brand{font-weight:800;letter-spacing:.5px;font-size:19px}.brand span{color:var(--blue)}.tag{font-size:11px;color:var(--green);border:1px solid #245b4a;padding:4px 8px;border-radius:20px}
+main{max-width:760px;margin:auto;padding:18px 14px 100px}.intro{margin:8px 2px 20px}.intro h1{font-size:25px;margin:0 0 6px}.muted{color:var(--muted)}.tabs{display:flex;gap:8px;margin:16px 0}.tab,button,select{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:12px;padding:10px 13px;font:inherit}.tab.active{background:#25304a;border-color:#526ca8}.card{background:var(--panel);border:1px solid var(--line);border-radius:17px;padding:15px;margin:12px 0}.row{display:flex;justify-content:space-between;align-items:center;gap:10px}.price{font-size:28px;font-weight:750;margin:8px 0}.positive{color:var(--green)}.negative{color:var(--red)}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.metric{background:#101620;border-radius:12px;padding:11px}.metric small{color:var(--muted);display:block}.metric b{font-size:17px}.btn{background:#526fe0;border:0;font-weight:700}.btn:disabled{opacity:.5}.full{width:100%}input,textarea{width:100%;background:#0e131c;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit}textarea{min-height:82px;resize:vertical}.chatlog{display:flex;flex-direction:column;gap:10px;max-height:360px;overflow:auto;margin:12px 0}.bubble{padding:11px 13px;border-radius:14px;max-width:92%;white-space:pre-wrap;line-height:1.4}.bot{background:#202838;align-self:flex-start}.user{background:#344b91;align-self:flex-end}.hidden{display:none}.note{font-size:12px;color:var(--muted);line-height:1.45}.signal{font-size:18px;font-weight:800}.footer{position:fixed;bottom:0;left:0;right:0;background:#10131bf2;border-top:1px solid var(--line);padding:10px 14px calc(10px + env(safe-area-inset-bottom));text-align:center;color:var(--muted);font-size:11px}
+</style>
+</head>
+<body>
+<header><div class="brand">⚡ SPEEDZZ <span>AI</span></div><div class="tag">PROTOTYPE · SCANNER ONLY</div></header>
+<main>
+ <section class="intro"><h1>Your trading companion.</h1><div class="muted">Market data, technical checks and a simple AI-style assistant.</div></section>
+ <div class="tabs"><button class="tab active" data-tab="scanner">Scanner</button><button class="tab" data-tab="assistant">AI Assistant</button></div>
+ <section id="scanner">
+  <div class="card">
+   <div class="row"><b>Crypto scanner</b><select id="symbol"><option>BTCUSDT</option><option>ETHUSDT</option></select></div>
+   <div class="price" id="price">--</div><div id="change" class="muted">Connecting to Binance public market data…</div>
+   <div class="grid" style="margin-top:14px">
+    <div class="metric"><small>Timeframe</small><b>5 minutes</b></div>
+    <div class="metric"><small>RSI (14)</small><b id="rsi">--</b></div>
+    <div class="metric"><small>EMA (9 / 21)</small><b id="ema">--</b></div>
+    <div class="metric"><small>Signal</small><b id="signal">WAIT</b></div>
+   </div>
+   <button class="btn full" id="refresh" style="margin-top:14px">Refresh scan</button>
+   <p class="note" id="updated">No scan yet.</p>
+  </div>
+  <div class="card"><b>US stocks scanner</b><p class="muted">Not connected yet. This prototype does not invent stock prices or signals. A free data source and its delay/limits must be selected before enabling it.</p><div class="row"><span>Watchlist</span><b>AAPL · MSFT · NVDA · TSLA</b></div></div>
+  <div class="card"><b>How to read the signal</b><p class="note">BUY/SELL here is only a basic EMA + RSI educational condition, not a recommendation. WAIT means conditions are mixed. Always verify market structure, fees, liquidity and risk before any decision.</p></div>
+ </section>
+ <section id="assistant" class="hidden">
+  <div class="card"><b>SPEEDZZ AI Assistant</b><p class="note">This first version uses local rule-based replies; it is not connected to Claude or another paid AI API.</p>
+   <div class="chatlog" id="chatlog"><div class="bubble bot">Hi! I’m SPEEDZZ AI. Ask me about EMA, RSI, risk management, or the scanner. I can explain concepts, but I cannot guarantee profitable signals.</div></div>
+   <textarea id="question" placeholder="Ask about BTC, EMA, RSI, stop-loss…"></textarea><button class="btn full" id="send" style="margin-top:9px">Send message</button>
+  </div>
+ </section>
+</main>
+<div class="footer">Educational prototype · No order execution · Not financial advice</div>
+<script>
+const $=id=>document.getElementById(id);
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));$('scanner').classList.toggle('hidden',b.dataset.tab!=='scanner');$('assistant').classList.toggle('hidden',b.dataset.tab!=='assistant')}));
+function ema(values,n){let k=2/(n+1),v=values[0];for(let i=1;i<values.length;i++)v=values[i]*k+v*(1-k);return v}
+function rsi(values,n=14){let gains=0,losses=0;for(let i=values.length-n;i<values.length;i++){let d=values[i]-values[i-1];if(d>0)gains+=d;else losses-=d}let ag=gains/n,al=losses/n;if(al===0)return 100;return 100-100/(1+ag/al)}
+async function scan(){let sym=$('symbol').value;$('refresh').disabled=true;$('change').textContent='Fetching public market data…';try{
+ let [ticker,candles]=await Promise.all([
+ fetch('https://api.binance.com/api/v3/ticker/24hr?symbol='+sym).then(r=>{if(!r.ok)throw Error('Market data unavailable');return r.json()}),
+ fetch('https://api.binance.com/api/v3/klines?symbol='+sym+'&interval=5m&limit=60').then(r=>{if(!r.ok)throw Error('Candle data unavailable');return r.json()})
+ ]);
+ let closes=candles.map(c=>Number(c[4])),last=Number(ticker.lastPrice),pct=Number(ticker.priceChangePercent),rv=rsi(closes),e9=ema(closes.slice(-30),9),e21=ema(closes.slice(-40),21);
+ $('price').textContent=last.toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2});
+ $('change').textContent=(pct>=0?'+':'')+pct.toFixed(2)+'% over 24h';$('change').className=pct>=0?'positive':'negative';
+ $('rsi').textContent=rv.toFixed(1);$('ema').textContent=e9>e21?'9 above 21':'9 below 21';
+ let sig=e9>e21&&rv>=50&&rv<70?'BUY':e9<e21&&rv<50&&rv>30?'SELL':'WAIT';
+ $('signal').textContent=sig;$('signal').style.color=sig==='BUY'?'var(--green)':sig==='SELL'?'var(--red)':'var(--muted)';
+ $('updated').textContent='Updated: '+new Date().toLocaleString()+' · Source: Binance Spot public API · 5m candles';
+ }catch(e){$('change').textContent='Could not load data: '+e.message+'. Check connection or try again.';$('updated').textContent='No verified signal available.';$('signal').textContent='WAIT';}finally{$('refresh').disabled=false}}
+$('refresh').addEventListener('click',scan);$('symbol').addEventListener('change',scan);scan();
+function reply(q){let s=q.toLowerCase();if(s.includes('rsi'))return 'RSI measures recent price momentum from 0 to 100. Common reference levels are 70 (often called overbought) and 30 (often called oversold), but neither guarantees a reversal.';if(s.includes('ema'))return 'EMA is a moving average that gives more weight to recent prices. Traders sometimes compare a fast EMA with a slower EMA to study trend direction. It can lag and produce false signals in sideways markets.';if(s.includes('stop')||s.includes('risk'))return 'A stop-loss is a predefined exit level if a trade moves against your plan. Decide risk before entry; position size depends on entry, stop distance and your maximum acceptable loss. Never risk money you cannot afford to lose.';if(s.includes('signal')||s.includes('buy')||s.includes('sell'))return 'Open Scanner and refresh market data. This prototype uses a basic EMA(9/21) + RSI condition. Treat its output as educational only, confirm with price structure and never assume a signal will be profitable.';if(s.includes('btc')||s.includes('bitcoin'))return 'Bitcoin trades 24/7. This prototype reads BTCUSDT spot data from Binance public endpoints. BTCUSDT is not exactly identical to every BTCUSD broker or exchange quote.';return 'I can explain EMA, RSI, VWAP, candlesticks, market structure and risk management. This prototype has no connected large language model yet. Ask me about one of those topics.'}
+$('send').addEventListener('click',()=>{let q=$('question').value.trim();if(!q)return;let log=$('chatlog');let u=document.createElement('div');u.className='bubble user';u.textContent=q;log.append(u);let a=document.createElement('div');a.className='bubble bot';a.textContent=reply(q);log.append(a);$('question').value='';log.scrollTop=log.scrollHeight});
+if('serviceWorker' in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body></html>
